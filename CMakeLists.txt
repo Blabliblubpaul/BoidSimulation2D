@@ -8,6 +8,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 
-add_executable(BoidSimulation2D main.cpp)
+add_executable(BoidSimulation2D main.cpp
+        Boid.cpp
+        Boid.h
+        Vector2.cpp
+        Vector2.h)
 
 target_link_libraries(BoidSimulation2D PRIVATE SDL3::SDL3)
