@@ -1,0 +1,32 @@
+# CMake build directories
+/build/
+cmake-build-debug/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+
+# C++ specific files
+*.out
+*.a
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.lib
+*.ilk
+*.obj
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+*.bak
+
+# User-specific configuration files
+*.user
+*.user.linux
+*.user.mac
+*.user.win
