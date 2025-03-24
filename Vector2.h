@@ -73,12 +73,21 @@ namespace BoidSimulation2D {
         }
 
         [[nodiscard]]
-        Vector2 operator*(float scalar) const {
+        Vector2 operator*(const float scalar) const {
             return {x * scalar, y * scalar};
         }
-        void operator*=(float scalar) {
+        void operator*=(const float scalar) {
             x *= scalar;
             y *= scalar;
+        }
+
+        [[nodiscard]]
+        Vector2 operator/(const float scalar) const {
+            return {x / scalar, y / scalar};
+        }
+        void operator/=(const float scalar) {
+            x /= scalar;
+            y /= scalar;
         }
 
         [[nodiscard]]

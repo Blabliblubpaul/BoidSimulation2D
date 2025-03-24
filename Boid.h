@@ -23,14 +23,11 @@ namespace BoidSimulation2D {
         Boid(const Vector2& position, const Vector2& velocity, const Vector2& acceleration, float maxSpeed,
              float maxForce);
 
-        void update(std::vector<Boid>& allBoids);
+        void update(std::vector<Boid>& allBoids, int boidAmount);
 
     private:
-        Vector2 separation(std::vector<Boid>& allBoids) const;
-
-        Vector2 alignment(std::vector<Boid>& allBoids) const;
-
-        Vector2 cohesion(std::vector<Boid>& allBoids) const;
+        [[nodiscard]]
+        Vector2 keepInBounds() const;
 
         inline static Vector2 limit(Vector2 vector, float max);
     };

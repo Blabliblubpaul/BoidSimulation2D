@@ -4,15 +4,27 @@
 
 #include "Boid.h"
 
+#include <iostream>
+
+#include "immintrin.h"
 #include "Vector2.h"
 
-#define SEPARATION_RADIUS_SQUARED 1.0f
-#define ALIGNMENT_RADIUS_SQUARED 1.0f
-#define COHESION_RADIUS_SQUARED 1.0f
+#define WINDOW_WIDTH 640
+#define WINDOW_HEIGHT 480
+
+#define VISUAL_RANGE 75
+
+#define SPEED 10
 
 namespace BoidSimulation2D {
-    Boid::Boid(const Vector2& position, const Vector2& velocity, const Vector2& acceleration, const float maxSpeed,
-               const float maxForce) {
+    constexpr float minDistance = 20;
+    constexpr float separationFactor = 0.05f;
+
+    constexpr float alignmentFactor = 0.05f;
+
+    constexpr float centeringFactor = 0.005f;
+
+    Boid::Boid(const Vector2& position, const Vector2& velocity, const Vector2& acceleration, const float maxSpeed, const float maxForce) {
         this->position = position;
         this->velocity = velocity;
         this->acceleration = acceleration;
@@ -20,79 +32,86 @@ namespace BoidSimulation2D {
         this->maxForce = maxForce;
     }
 
-    void Boid::update(std::vector<Boid>& allBoids) {
-        const Vector2 vecSep = separation(allBoids);
-        const Vector2 vecAlign = alignment(allBoids);
-        const Vector2 vecCoh = cohesion(allBoids);
-
-        acceleration = vecSep + vecAlign + vecCoh;
-
-        velocity += acceleration;
-        velocity = limit(velocity, maxSpeed);
-
-        position += velocity;
-    }
-
-    Vector2 Boid::separation(std::vector<Boid>& allBoids) const {
-        Vector2 steer = Vector2::Zero;
-        int count = 0;
-
-        for (Boid& other : allBoids) {
-            if (const float distSquared = Vector2::distanceSquared(position, other.position);
-                distSquared > 0 && distSquared < SEPARATION_RADIUS_SQUARED) {
-
-                const Vector2 diff = position - other.position.normalized();
-                steer += diff;
-                count++;
-            }
-        }
-
-        if (count > 0) {
-            steer *= 1.0f / static_cast<float>(count);
-        }
-
-        return  limit(steer, maxForce);
-    }
-
-    Vector2 Boid::alignment(std::vector<Boid>& allBoids) const {
+    void Boid::update(std::vector<Boid>& allBoids, const int boidAmount) {
+        Vector2 move = Vector2::Zero;
         Vector2 avgVelocity = Vector2::Zero;
-        int count = 0;
+        Vector2 center = Vector2::Zero;
 
+        int numNeighbors = 0;
         for (Boid& other : allBoids) {
-            if (const float distSquared = Vector2::distanceSquared(position, other.position);
-                distSquared > 0 && distSquared < ALIGNMENT_RADIUS_SQUARED) {
+            if (&other == this) {
+                continue;
+            }
 
+            // Separation
+            if (Vector2::distance(position, other.position) < minDistance) {
+                move += position - other.position;
+            }
+
+            if (Vector2::distance(position, other.position) < VISUAL_RANGE) {
+                // Alignment
                 avgVelocity += other.velocity;
-                count++;
+
+                // Cohesion
+                center += other.position;
+
+                numNeighbors++;
             }
         }
 
-        if (count > 0) {
-            avgVelocity *= 1.0f / static_cast<float>(count);
+        // Separation
+        move *= separationFactor;
+
+        // Alignment
+        if (numNeighbors > 0) {
+            // Alignment
+            avgVelocity /= static_cast<float>(numNeighbors);
+
+            avgVelocity = (avgVelocity - velocity) * alignmentFactor;
+
+            // Cohesion
+            center /= static_cast<float>(numNeighbors);
+
+            center = (center - position) * centeringFactor;
+        }
+        else {
+            // Alignment
+            avgVelocity = Vector2::Zero;
+
+            // Cohesion
+            center = Vector2::Zero;
         }
 
-        return limit(avgVelocity - velocity, maxForce);
+        acceleration = move + avgVelocity + center;
+
+
+        velocity = limit(velocity + acceleration, 15);
+        velocity += keepInBounds();
+
+        position += velocity * (SPEED * 0.0167f);
     }
 
-    Vector2 Boid::cohesion(std::vector<Boid>& allBoids) const {
-        Vector2 centerMass = Vector2::Zero;
-        int count = 0;
+    Vector2 Boid::keepInBounds() const {
+        constexpr float margin = 200;
+        constexpr float turnFactor = 1;
 
-        for (Boid& other : allBoids) {
-            if (const float distSquared = Vector2::distanceSquared(position, other.position);
-                distSquared > 0 && distSquared < COHESION_RADIUS_SQUARED) {
+        Vector2 velocity = Vector2::Zero;
 
-                centerMass += other.position;
-                count++;
-            }
+        if (position.x < margin) {
+            velocity.x += turnFactor;
+        }
+        else if (position.x > WINDOW_WIDTH - margin) {
+            velocity.x -= turnFactor;
         }
 
-        if (count > 0) {
-            centerMass *= 1.0f / static_cast<float>(count);
-            return limit(centerMass - position, maxForce);
+        if (position.y < margin) {
+            velocity.y += turnFactor;
+        }
+        else if (position.y > WINDOW_HEIGHT - margin) {
+            velocity.y -= turnFactor;
         }
 
-        return  Vector2::Zero;
+        return velocity;
     }
 
     Vector2 Boid::limit(const Vector2 vector, const float max) {
